@@ -1,0 +1,46 @@
+sudo: required
+services:
+  - docker
+language: bash
+env:
+  global:
+  - secure: "h86L1+q/oZE6TNYMyGgcKWKc6/KmM8/pSzCCK2ExeasSRoU6ukesi0toflPD3qFBlnku1T5QJkQD81xFZnUPvcopJbfnTXF7TzSUSm2u6Ahs1CD+Ao3J81dEOTTqzIgtXpkwkZ2nXN6Hmixf1n+q+pnHebbBVeaXIrsHx+xHYBx5MIunuJWOFhpW01dBDyoOsvZ+CtWJISIBqx9Lzb7HiiXJJLzlpl9ytG4LmD49FHCU4zk/4J/iQMh6mu2nTFi/oQ1Z2zj3rXtDYsCDTAlnx4y/Tl1M3ih8MQpO2CM95ZBcTjIa2ZC/x+Qx6Yz/+hGJL7gz4q+mo0ogbvuqkOcEHmGK2sKb+68IFOGz+KNYPB7QLH91w0pL4Ikhe9veVYmb1N9v6LLkbUDi5LssR1qnRXvcFmufCvE5o4RCKMq9Lm7kq/kixbI8CMPvK4xmtsnmRs3F8VrrpttkSTMjW9nA7tkUuz2EODWogsHBCRkHfWDEgzUA+nsq8YKA4BdJF7iBTASZxuwkgH5NWM5cmIK9EOmT3Wfe6wezPH7XcmoHOKSht2MZSVlUwtrE2q7ZqKz5iEFIuk0l+C4xdblh6XCjBSJNgDOIUF4C4qh2BukKeIDOg0i9XMwnsPdirHElbyEPJuGEPmb/aeP1NhgsDwl53/O3knvu+jzPeR8BoBLyVB8="
+  - secure: "JvZHjkzHeoKrtntlio/L9TU0h0w9cHPf29l3fqdn26NwLhoIbo3NDBcotC4ZG7R+7X0zlK2kEIVTFxzcUCdUn9w0oN9WTYtCsRGz9mJFtXU3gSQ5/KxRhr4c8ogFXilRhKJ9L/CIzLGF1jTOhQeqCvJ/BmDG3Oeu5v2WanetdEj1D6DB2bLjS8qw/0LoADBgEr8fRfvatEhuD4t6ILZMKOgOSk+6b8pchnnaUDYWHngjiiWZn166vXmBIx5I8XhZXMBucXEpegq36I62YfndWK58Mztv0v1IbSUkDTBy5JbcZWO14DTlaKeMpIWJuE8GF+toS2PFaKhiTaKJ0OOiPM3MgZzTu/uRhu3mppDTTbPqVxiX0nP3qu8QgOr3o/Xe+wY86YPT8y1Zh/av0A4S3BL8tWBM6ofmHu7TGiG+9JwT3UfMHgL35ZJsqgDXk064KbuLXf4Tyg6KnyzjlkaHp7LbY6jqzSXF+zAcS3m2EkyhZzErlElY6wMplzxk4Mv9VsTAL+C4sk9Wg5ysmIhijB1mdMNhs+Ezs5KlvztE6N2aXsQf0+qNeJneq8cB0EArpb8XjTHOIim3mMMFzW7dGuKetzq8xqCvDfJP/l6Vyp3wTuBrX2V7+4a7ShsZ0Sa6ZusMmByZJVo6Ih6uGPAWlZFbufjp2TJDADhbgo6vKiY="
+install:
+- wget https://github.com/estesp/manifest-tool/releases/download/v0.7.0/manifest-tool-linux-amd64 -O manifest-tool
+- chmod +x manifest-tool
+script:
+# Build amd64
+- docker build -t "ngdio/dehydrated:amd64" -f amd64/Dockerfile .
+# Build i386
+- docker build -t "ngdio/dehydrated:i386" -f i386/Dockerfile .
+# Setup QEMU
+- docker run --rm --privileged multiarch/qemu-user-static:register --reset
+# Build armhf
+- docker build -t "ngdio/dehydrated:armhf" -f armhf/Dockerfile .
+# Build aarch64
+- docker build -t "ngdio/dehydrated:aarch64" -f aarch64/Dockerfile .
+after_success:
+# Tag and push built images
+- >
+  if [ "$TRAVIS_BRANCH" == "master" ] && [ "$TRAVIS_PULL_REQUEST" == "false" ]; then
+    docker login -u="$DOCKER_USER" -p="$DOCKER_PASS"
+    VERSION=$(cat .VERSION)
+    docker tag ngdio/dehydrated:amd64 ngdio/dehydrated:amd64-$VERSION
+    docker push ngdio/dehydrated:amd64
+    docker push ngdio/dehydrated:amd64-$VERSION
+    docker tag ngdio/dehydrated:i386 ngdio/dehydrated:i386-$VERSION
+    docker push ngdio/dehydrated:i386
+    docker push ngdio/dehydrated:i386-$VERSION
+    docker tag ngdio/dehydrated:armhf ngdio/dehydrated:armhf-$VERSION
+    docker push ngdio/dehydrated:armhf
+    docker push ngdio/dehydrated:armhf-$VERSION
+    docker tag ngdio/dehydrated:aarch64 ngdio/dehydrated:aarch64-$VERSION
+    docker push ngdio/dehydrated:aarch64
+    docker push ngdio/dehydrated:aarch64-$VERSION
+  fi
+# Update manifest
+- >
+  if [ "$TRAVIS_BRANCH" == "master" ] && [ "$TRAVIS_PULL_REQUEST" == "false" ]; then
+    ./manifest-tool --username $DOCKER_USER --password $DOCKER_PASS push from-spec manifest.yml
+  fi
