@@ -2,7 +2,7 @@ FROM i386/alpine:3.8
 
 ENV VERSION 0.6.2
 
-COPY files/dehydrated/ /dehydrated
+COPY files/ /
 
 RUN set -x; \
     GPGKEY='3C2F2605E078A1E18F4793909C4DBE6CF438F333' \
@@ -29,7 +29,7 @@ RUN set -x; \
 	&& apk add --no-cache bash curl libressl sudo \
     && addgroup -S dehydrated \
     && adduser -D -S -H -h /dehydrated/data -s /sbin/nologin -G dehydrated -g dehydrated dehydrated \
-    && chown -R dehydrated.dehydrated /dehydrated/data /dehydrated/certs /dehydrated/www
+    && install -d -o dehydrated -g dehydrated /dehydrated/data /dehydrated/certs /dehydrated/www
 
 VOLUME ["/dehydrated/certs", "/dehydrated/data", "/dehydrated/www"]
 
