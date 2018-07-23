@@ -1,0 +1,2 @@
+#!/bin/sh
+dehydrated --accept-terms --cron -f /dehydrated/config/config && crond -f

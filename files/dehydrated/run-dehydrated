@@ -1,0 +1,3 @@
+#!/bin/sh
+date
+dehydrated --accept-terms --cron -f /dehydrated/config/config
